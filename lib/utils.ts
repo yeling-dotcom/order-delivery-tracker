@@ -1,0 +1,6 @@
+import type { Order } from "./types";
+
+export function formatDate(date?: string | null) { if (!date) return "—"; return new Intl.DateTimeFormat("en-MY", { day:"numeric", month:"short", year:"numeric" }).format(new Date(`${date.slice(0,10)}T00:00:00`)); }
+export function formatCurrency(value:number|string) { return new Intl.NumberFormat("en-MY", { style:"currency", currency:"MYR", maximumFractionDigits:0 }).format(Number(value)); }
+export function isDeliveryOverdue(date?:string|null,status?:string) { if (!date || ["delivered","failed"].includes(status || "")) return false; const today=new Date();today.setHours(0,0,0,0);return new Date(`${date}T00:00:00`)<today; }
+export function getPriority(order:Order) { let score=0; if (order.isOverdue && order.delivery) { const days=Math.max(1,Math.floor((Date.now()-new Date(`${order.delivery.scheduled_date}T00:00:00`).getTime())/86400000)); score+=40+Math.min(30,(days-1)*10); } if(!["completed","cancelled"].includes(order.status)) score+=20; if(order.status==="completed"&&order.payment_status!=="paid") score+=15; if(order.status==="confirmed"&&!order.delivery) score+=25; score=Math.min(100,score); return {score,tone:score>=60?"high":score>=30?"medium":"low"}; }
