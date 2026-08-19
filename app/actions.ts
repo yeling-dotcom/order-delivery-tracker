@@ -2,9 +2,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getPriority, isDeliveryOverdue } from "@/lib/utils";
 
 const text=(form:FormData,key:string)=>String(form.get(key)||"").trim();
 async function audit(supabase:any,action_type:string,target_type:string,target_id:string,before_state:any,after_state:any){await supabase.from("audit_log").insert({action_type,target_type,target_id,before_state,after_state});}
+async function refreshPriority(supabase:any,orderId:string){const{data}=await supabase.from("orders").select("*, delivery:deliveries(*)").eq("id",orderId).single();if(!data)return;const delivery=Array.isArray(data.delivery)?data.delivery[0]||null:data.delivery;const score=getPriority({...data,delivery,isOverdue:isDeliveryOverdue(delivery?.scheduled_date,delivery?.status)}).score;await supabase.from("orders").update({priority_score:score,priority_source:"rule_engine",priority_confidence:1}).eq("id",orderId);}
 
 export async function createOrder(form:FormData){
   const supabase=await createClient(); const customerName=text(form,"customer_name"); const orderNumber=text(form,"order_number"); const scheduledDate=text(form,"scheduled_date");
@@ -16,19 +18,19 @@ export async function createOrder(form:FormData){
   if(orderError){await supabase.from("customers").delete().eq("id",customer.id);throw new Error(orderError.message);}
   const {error:deliveryError}=await supabase.from("deliveries").insert({order_id:order.id,scheduled_date:scheduledDate,status:"scheduled",notes:text(form,"delivery_notes")||null});
   if(deliveryError){await supabase.from("orders").delete().eq("id",order.id);await supabase.from("customers").delete().eq("id",customer.id);throw new Error(deliveryError.message);}
-  await audit(supabase,"order.created","order",order.id,null,{...order,scheduled_date:scheduledDate}); revalidatePath("/");revalidatePath("/orders");revalidatePath("/deliveries"); redirect(`/orders/${order.id}`);
+  await refreshPriority(supabase,order.id);await audit(supabase,"order.created","order",order.id,null,{...order,scheduled_date:scheduledDate}); revalidatePath("/");revalidatePath("/orders");revalidatePath("/deliveries"); redirect(`/orders/${order.id}`);
 }
 
 export async function updateOrder(form:FormData){
   const supabase=await createClient(); const id=text(form,"id"); const {data:before}=await supabase.from("orders").select("*").eq("id",id).single();
   const payload={status:text(form,"status"),payment_status:text(form,"payment_status"),total_amount:Number(text(form,"total_amount")||0),assigned_admin_id:text(form,"assigned_admin_id")||null,notes:text(form,"notes")||null};
-  const {data,error}=await supabase.from("orders").update(payload).eq("id",id).select().single(); if(error) throw new Error(error.message); await audit(supabase,"order.updated","order",id,before,data); revalidatePath("/");revalidatePath("/orders");revalidatePath(`/orders/${id}`);
+  const {data,error}=await supabase.from("orders").update(payload).eq("id",id).select().single(); if(error) throw new Error(error.message);await refreshPriority(supabase,id); await audit(supabase,"order.updated","order",id,before,data); revalidatePath("/");revalidatePath("/orders");revalidatePath(`/orders/${id}`);
 }
 
 export async function updateDelivery(form:FormData){
   const supabase=await createClient(); const id=text(form,"delivery_id"); const orderId=text(form,"order_id"); const {data:before}=await supabase.from("deliveries").select("*").eq("id",id).single(); const status=text(form,"delivery_status");
   const payload={scheduled_date:text(form,"scheduled_date"),status,notes:text(form,"delivery_notes")||null,delivered_date:status==="delivered"?(before?.delivered_date||new Date().toISOString()):null};
-  const {data,error}=await supabase.from("deliveries").update(payload).eq("id",id).select().single();if(error)throw new Error(error.message);await audit(supabase,"delivery.updated","delivery",id,before,data);revalidatePath("/");revalidatePath("/deliveries");revalidatePath(`/orders/${orderId}`);
+  const {data,error}=await supabase.from("deliveries").update(payload).eq("id",id).select().single();if(error)throw new Error(error.message);await refreshPriority(supabase,orderId);await audit(supabase,"delivery.updated","delivery",id,before,data);revalidatePath("/");revalidatePath("/deliveries");revalidatePath(`/orders/${orderId}`);
 }
 
 export async function deleteOrder(form:FormData){const supabase=await createClient();const id=text(form,"id");const {data:before}=await supabase.from("orders").select("*").eq("id",id).single();await audit(supabase,"order.deleted","order",id,before,null);const {error}=await supabase.from("orders").delete().eq("id",id);if(error)throw new Error(error.message);revalidatePath("/");revalidatePath("/orders");revalidatePath("/deliveries");redirect("/orders");}

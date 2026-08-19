@@ -29,6 +29,11 @@ export default async function DashboardPage() {
         <article className="stat-card"><span>Unpaid completed</span><strong>{unpaidCompleted.length}</strong><small>Follow up on payment</small></article>
       </section>
 
+      <section className="summary-card">
+        <div className="summary-icon">✦</div>
+        <div><p className="eyebrow">Daily brief</p><strong>{overdue.length > 0 ? `${overdue.length} ${overdue.length === 1 ? "delivery is" : "deliveries are"} overdue.` : "No deliveries are overdue."}</strong><p>{overdue.length > 0 ? `${overdue[0].order_number} is the highest-priority follow-up at score ${overdue[0].priority_score}. ${unpaidCompleted.length ? `${unpaidCompleted.length} completed order also needs payment follow-up.` : "Completed orders are paid up."}` : unpaidCompleted.length ? `${unpaidCompleted.length} completed order needs payment follow-up.` : "The team is fully caught up."}</p></div>
+      </section>
+
       <section className="section-block">
         <div className="section-heading"><div><p className="eyebrow">Priority queue</p><h2>Needs attention</h2></div><Link href="/orders">View all orders →</Link></div>
         {orders.length === 0 ? (
