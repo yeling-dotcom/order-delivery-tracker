@@ -6,6 +6,10 @@ import { StatusBadge } from "@/components/status-badge";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  const weekday = new Intl.DateTimeFormat("en-MY", {
+    weekday: "long",
+    timeZone: "Asia/Kuala_Lumpur",
+  }).format(new Date());
   const orders = await getDashboardOrders();
   const overdue = orders.filter((order) => order.isOverdue);
   const unpaidCompleted = orders.filter(
@@ -16,7 +20,7 @@ export default async function DashboardPage() {
     <div className="page-wrap">
       <header className="page-header split">
         <div>
-          <p className="eyebrow">Wednesday operations</p>
+          <p className="eyebrow">{weekday} operations</p>
           <h1>Good morning, team.</h1>
           <p className="subtitle">Here’s what needs your attention today.</p>
         </div>
