@@ -1,41 +1,16 @@
-# vibe-stack-supabase
+# Dispatch — Order & Delivery Tracker
 
-Next.js 15 + Supabase starter for shipping vibe-coded apps fast. Clone, provision, build.
+A working operations app for recording customer orders, scheduling deliveries,
+and surfacing overdue, incomplete, and unpaid work. The demo-first v1 opens
+directly to seeded data and does not require sign-in.
 
-## Stack
+## Local development
 
-| Layer | Choice |
-|---|---|
-| Framework | Next.js 15 (App Router, React 19, Server Actions) |
-| Language | TypeScript strict |
-| Styles | Tailwind CSS v4 (CSS-first, no config file) |
-| Auth + DB | Supabase (`@supabase/ssr`) |
-| Package manager | Bun |
-| Deploy | Vercel |
+1. Pull the linked Vercel environment: `vercel env pull .env.local`.
+2. Apply `supabase/migrations/202608190001_initial_order_tracker.sql` to the
+   linked Supabase project if the tables are not present.
+3. Install dependencies and start Next.js: `pnpm install && pnpm dev`.
+4. Open <http://localhost:3000>.
 
-## Quick start
-
-```bash
-bun install
-cp .env.example .env.local   # fill in your Supabase keys
-bun dev
-```
-
-Open http://localhost:3000. Edit `app/page.tsx` to start building.
-
-## Provisioning a new project
-
-Use the `/new-vibe-project <name>` skill (see `claude-dotfiles` repo) which:
-1. Clones this template and renames it
-2. Creates a new GitHub repo and pushes
-3. Creates a Supabase project and injects URL + anon key
-4. Creates a Vercel project linked to the GitHub repo
-5. Triggers first deploy and returns the preview URL
-
-## Working with AI
-
-See [CLAUDE.md](CLAUDE.md) for conventions. This repo is pre-wired for gstack — start with `/office-hours`.
-
-## Switching to Neon
-
-If you need Postgres without Supabase (e.g. prefer Drizzle ORM + Clerk for auth), a `vibe-stack-neon` variant is planned. For now: fork this and swap `@supabase/ssr` for `drizzle-orm` + `@neondatabase/serverless`, add Clerk or NextAuth.
+The production app is deployed by pushing `main`; do not deploy local files
+with the Vercel CLI.
