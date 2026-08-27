@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { authenticate, type AuthState } from "@/app/auth/actions";
 
@@ -23,6 +24,7 @@ export function AuthForm() {
         {state.error && <p className="form-message error" role="alert">{state.error}</p>}
         {state.message && <p className="form-message success" role="status">{state.message}</p>}
         <button className="button primary" disabled={pending}>{pending ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}</button>
+        {mode === "login" && <Link className="auth-link" href="/forgot-password">Forgot your password?</Link>}
       </form>
     </div>
   );

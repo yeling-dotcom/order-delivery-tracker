@@ -36,7 +36,7 @@ export async function updateSession(request: NextRequest) {
 
     // Refresh session so it doesn't expire while user is active
     const { data: { user } } = await supabase.auth.getUser();
-    const isPublicRoute = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/auth/");
+    const isPublicRoute = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/forgot-password") || request.nextUrl.pathname.startsWith("/auth/");
     if (!user && !isPublicRoute) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/login";
